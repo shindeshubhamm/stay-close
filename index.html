@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Stay Close</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #111; overflow: hidden; touch-action: none; overscroll-behavior: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+      #stick { position: fixed; left: 0; top: 0; width: 96px; height: 96px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.08); pointer-events: none; }
+      #knob { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: 0; border-radius: 50%; background: rgba(255,255,255,0.5); }
+      body { display: flex; align-items: center; justify-content: center; }
+      canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+      [hidden] { display: none !important; }
+      body { font-family: ui-monospace, Menlo, monospace; color: #f4f4f4; }
+      #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(10, 10, 20, 0.8); }
+      .panel { display: flex; flex-direction: column; gap: 12px; min-width: 260px; padding: 24px; background: #1a1c2c; border: 4px solid #566c86; }
+      .panel h1, .panel h2 { margin: 0; text-align: center; letter-spacing: 2px; }
+      .row { display: flex; gap: 8px; }
+      input, button { font: inherit; font-size: 16px; /* >=16px stops iOS zooming on focus */ padding: 8px; border: 2px solid #566c86; background: #262b44; color: inherit; }
+      .row input { flex: 1; min-width: 0; text-transform: uppercase; }
+      button { cursor: pointer; background: #3b5dc9; }
+      button:hover { background: #4a70e0; }
+      .tagline { margin: -8px 0 0; text-align: center; color: #b8c4d6; font-size: 13px; }
+      #error { margin: 0; color: #ef7d57; min-height: 1em; }
+      #players { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+      .dot { display: inline-block; width: 12px; height: 12px; margin-right: 8px; }
+      #waiting, #result { margin: 0; text-align: center; }
+      #level-info { margin: 0; text-align: center; font-weight: bold; }
+      #hint { margin: 0; font-size: 13px; line-height: 1.4; color: #b8c4d6; max-width: 300px; }
+      #result { font-weight: bold; }
+      select { font: inherit; font-size: 16px; padding: 8px; border: 2px solid #566c86; background: #262b44; color: inherit; }
+      #hud { position: fixed; top: 8px; left: 8px; right: 8px; font-size: 12px; text-shadow: 0 1px 2px #000; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+    <div id="stick" hidden><div id="knob"></div></div>
+    <div id="hud" hidden></div>
+    <div id="overlay">
+      <div id="menu" class="panel">
+        <h1>STAY CLOSE</h1>
+        <p class="tagline">Don't wander off.</p>
+        <input id="name" maxlength="12" placeholder="Your name" />
+        <button id="create">Create room</button>
+        <div class="row">
+          <input id="code" maxlength="4" placeholder="CODE" />
+          <button id="join">Join</button>
+        </div>
+        <p id="error"></p>
+      </div>
+      <div id="lobby" class="panel" hidden>
+        <h2>Room <span id="room-code"></span></h2>
+        <p id="level-info"></p>
+        <p id="hint"></p>
+        <p id="result"></p>
+        <ul id="players"></ul>
+        <select id="level"></select>
+        <button id="start">Start</button>
+        <p id="waiting">Waiting for host…</p>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "stay-close",
+  "description": "Stay Close: a 5-player co-op pixel-art zombie escape game for the browser.",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --parallel dev:server dev:client",
+    "dev:client": "vite",
+    "dev:server": "bun --watch server/index.ts",
+    "start": "bun server/index.ts",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  }
+}
