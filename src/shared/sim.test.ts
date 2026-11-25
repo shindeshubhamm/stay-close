@@ -58,16 +58,50 @@ describe("grouping rules", () => {
     expect(w.lost).toBe(true);
   });
 
-  test("a tight group takes no damage and kills a walker", () => {
+  test("a tight group is safe but its swings are harmless", () => {
     const w = makeWorld(arena("#.......Z..........#"));
     const { players } = internals(w);
     [...players.values()].forEach((p, i) => {
       p.x = 80 + (i % 2) * 12;
       p.y = 60 + Math.floor(i / 2) * 12;
     });
-    run(w, 20);
+    for (let i = 0; i < 5 * 30; i++) {
+      for (const id of IDS.slice(0, 4)) w.attack(id);
+      w.step(1 / 30);
+    }
     expect(w.snapshot().players.every((p) => p.alive && p.hp === 100)).toBe(true);
+    expect(w.snapshot().zombies.length).toBe(1);
+    expect(w.snapshot().zombies[0]!.hp).toBe(50); // untouched despite constant swings
+  });
+
+  test("a lone player kills a walker with swings and survives", () => {
+    const w = makeWorld(arena("#.......Z..........#"), 1);
+    const { players, zombies } = internals(w);
+    players.get("p0")!.x = 100;
+    players.get("p0")!.y = 51;
+    zombies[0]!.x = 123; // centre distance 23: inside attack reach, outside the bite
+    zombies[0]!.y = 51;
+    for (let i = 0; i < 3 * 30; i++) {
+      w.attack("p0");
+      w.step(1 / 30);
+    }
     expect(w.snapshot().zombies.length).toBe(0);
+    expect(get(w, "p0").alive).toBe(true);
+  });
+
+  test("swings have a cooldown", () => {
+    const w = makeWorld(arena("#.......Z..........#"), 1);
+    const { players, zombies } = internals(w);
+    players.get("p0")!.x = 100;
+    players.get("p0")!.y = 51;
+    zombies[0]!.x = 123;
+    zombies[0]!.y = 51;
+    w.attack("p0");
+    w.step(1 / 30);
+    expect(w.snapshot().zombies[0]!.hp).toBe(20); // 50 - 30
+    w.attack("p0");
+    w.step(1 / 30);
+    expect(w.snapshot().zombies[0]!.hp).toBe(20); // still on cooldown
   });
 
   test("zombies cannot path through a closed door", () => {

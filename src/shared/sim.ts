@@ -8,7 +8,7 @@ export const MAX_PLAYERS = 5;
 export const COLORS = ["#ffcd75", "#41a6f6", "#a7f070", "#ef7d57", "#d77bba"] as const;
 
 export const PLAYER_HP = 100;
-/** A player with a living ally this close is "grouped": immune to bites and hits hard. */
+/** A player with a living ally this close is "grouped": immune to bites, but their swings are harmless. */
 export const GROUP_RADIUS = 44;
 
 export const ZOMBIE_TYPES = {
@@ -20,8 +20,13 @@ export const ZOMBIE_TYPES = {
   hulk: { speed: 24, hp: 160, dps: 25, size: 12, mass: 5 },
 } as const satisfies Record<ZombieType, { speed: number; hp: number; dps: number; size: number; mass: number }>;
 
-const DPS_GROUPED = 12;
-const DPS_ALONE = 3;
+/** Swings are manual (attack input). Only a LONE player's swing hurts zombies:
+ *  grouped players are safe but harmless, so killing means stepping away,
+ *  striking, and regrouping before you get bitten. */
+export const ATTACK_REACH = 20; // from the player's edge; further than a bite
+export const ATTACK_DAMAGE = 30; // walker 50 = 2 swings, runner 25 = 1, hulk 160 = 6
+export const ATTACK_COOLDOWN = 0.6; // seconds between swings
+export const SWING_TIME = 0.18; // seconds the swing flash is visible
 const AGGRO_RANGE = 130; // a zombie that sees a player becomes alerted for good
 const ALERT_SPREAD = 80; // ...and alerts nearby zombies
 const SHOVE_SPEED = 60; // hulks push players away (players walk at 70)
@@ -37,6 +42,7 @@ export interface PlayerState {
   hp: number;
   alive: boolean;
   grouped: boolean;
+  swing: number; // seconds left of the swing flash (0 = not swinging)
 }
 
 export interface ZombieState { id: number; type: ZombieType; x: number; y: number; hp: number }
@@ -64,15 +70,18 @@ const zc = (z: Zombie): Pt => {
 /**
  * Authoritative game simulation. Runs on the server; pure and network-free.
  *
- * Players near an ally are grouped: immune to bites and deadly to zombies.
- * Lone players take damage and barely hurt zombies. Zombies know this and try
- * to split the team: walkers spread out and pick off the isolated, runners cut
- * stragglers off from the group, hulks ram the middle and shove people apart.
- * All bodies collide with each other and with walls.
+ * Players near an ally are grouped: immune to bites, but their swings are
+ * harmless. To kill, a player must step away from the group — alone, swings
+ * hurt zombies but zombies hurt them too. Step out, strike, get back.
+ * Zombies exploit this: walkers spread out and pick off the isolated, runners
+ * cut stragglers off from the group, hulks ram the middle and shove people
+ * apart. All bodies collide with each other and with walls.
  */
 export class World {
   private players = new Map<string, PlayerState>();
   private inputs = new Map<string, { dx: number; dy: number }>();
+  private cooldowns = new Map<string, number>();
+  private attackQueued = new Set<string>();
   private zombies: Zombie[] = [];
   private openDoors = new Set<string>();
   private pressed = new Set<string>();
@@ -99,12 +108,20 @@ export class World {
       hp: PLAYER_HP,
       alive: true,
       grouped: false,
+      swing: 0,
     });
   }
 
   removePlayer(id: string): void {
     this.players.delete(id);
     this.inputs.delete(id);
+    this.cooldowns.delete(id);
+    this.attackQueued.delete(id);
+  }
+
+  /** Queue a swing for the next step. Ignored if the player is on cooldown. */
+  attack(id: string): void {
+    if (this.players.get(id)?.alive) this.attackQueued.add(id);
   }
 
   setInput(id: string, dx: number, dy: number): void {
@@ -283,6 +300,28 @@ export class World {
   }
 
   private combat(alive: PlayerState[], dt: number): void {
+    for (const p of this.players.values()) {
+      p.swing = Math.max(0, p.swing - dt);
+      const cd = this.cooldowns.get(p.id) ?? 0;
+      if (cd > 0) this.cooldowns.set(p.id, Math.max(0, cd - dt));
+    }
+
+    // Swings resolve before bites, so a well-timed attack can save you.
+    for (const p of alive) {
+      if (!p.alive || !this.attackQueued.has(p.id)) continue;
+      if ((this.cooldowns.get(p.id) ?? 0) > 0) continue;
+      this.cooldowns.set(p.id, ATTACK_COOLDOWN);
+      p.swing = SWING_TIME;
+      if (p.grouped) continue; // safe but harmless: you must be alone to kill
+      const pp = pc(p);
+      for (const z of this.zombies) {
+        const c = zc(z);
+        if (dist(pp.x, pp.y, c.x, c.y) <= ATTACK_REACH + PLAYER_SIZE / 2 + ZOMBIE_TYPES[z.type].size / 2) z.hp -= ATTACK_DAMAGE;
+      }
+    }
+    this.attackQueued.clear();
+    this.zombies = this.zombies.filter((z) => z.hp > 0);
+
     for (const z of this.zombies) {
       const spec = ZOMBIE_TYPES[z.type];
       const c = zc(z);
@@ -291,7 +330,6 @@ export class World {
         if (!p.alive) continue;
         const pp = pc(p);
         const d = dist(pp.x, pp.y, c.x, c.y);
-        if (d <= touch + 12) z.hp -= (p.grouped ? DPS_GROUPED : DPS_ALONE) * dt;
         if (d <= touch + 3 && !p.grouped) {
           p.hp -= spec.dps * dt;
           if (p.hp <= 0) {

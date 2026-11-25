@@ -129,6 +129,9 @@ function handle(ws: Socket, msg: ClientMsg): void {
     case "input":
       room?.world?.setInput(ws.data.id, Number(msg.dx) || 0, Number(msg.dy) || 0);
       return;
+    case "attack":
+      room?.world?.attack(ws.data.id);
+      return;
   }
 }
 

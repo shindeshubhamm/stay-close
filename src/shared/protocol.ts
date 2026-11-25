@@ -6,7 +6,8 @@ export type ClientMsg =
   | { t: "create"; name: string }
   | { t: "join"; code: string; name: string }
   | { t: "start"; level?: number } // level is only honoured from the lobby
-  | { t: "input"; dx: number; dy: number };
+  | { t: "input"; dx: number; dy: number }
+  | { t: "attack" };
 
 export interface LobbyPlayer { id: string; name: string; slot: number }
 

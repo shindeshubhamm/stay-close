@@ -9,6 +9,7 @@ import { Menu } from "./ui/menu";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const hud = document.getElementById("hud") as HTMLElement;
+const attackBtn = document.getElementById("attack") as HTMLButtonElement;
 const renderer = new Renderer(canvas, WIDTH, HEIGHT);
 
 let you = "";
@@ -36,7 +37,8 @@ function onMessage(msg: ServerMsg): void {
       if (msg.phase === "playing" && phase !== "playing") game.reset();
       menu.update(msg, you);
       hud.hidden = msg.phase !== "playing";
-      hud.textContent = `Level ${msg.level + 1}: ${level.name}. Stay close to allies. Zombies hunt the ones who wander off.`;
+      attackBtn.hidden = msg.phase !== "playing";
+      hud.textContent = `Level ${msg.level + 1}: ${level.name}. Close = safe but harmless. Step away and press Space / ATTACK to kill — then get back!`;
       phase = msg.phase;
       break;
     }

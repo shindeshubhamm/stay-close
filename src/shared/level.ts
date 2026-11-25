@@ -57,7 +57,7 @@ export function parseLevel(name: string, hint: string, rows: string[], reinforce
 }
 
 export const LEVELS: Level[] = [
-  parseLevel("First Night", "Zombies hunt anyone who is alone. Stay together to stay safe and to hurt them. Hold both A plates together to open the door.", [
+  parseLevel("First Night", "Close to allies = safe, but your swings are harmless. Step away and attack (Space / ATTACK) to kill, then get back! Hold both A plates together to open the door.", [
     "####################",
     "#.P..P...#.........#",
     "#...P....#..B...B..#",
@@ -83,7 +83,7 @@ export const LEVELS: Level[] = [
     "#........#.......EE#",
     "####################",
   ], 25),
-  parseLevel("Four Corners", "Kill what you can together, then split up and press all four corners at once. Hulks (big, slow) shove your group apart. More zombies keep coming.", [
+  parseLevel("Four Corners", "Take turns stepping out of the group to kill, then split up and press all four corners at once. Hulks (big, slow) shove your group apart. More zombies keep coming.", [
     "####################",
     "#A............A#####",
     "#.......Z......#####",

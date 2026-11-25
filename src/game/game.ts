@@ -3,7 +3,7 @@ import { Input } from "../engine/input";
 import { Renderer } from "../engine/renderer";
 import { COLS, LEVELS, ROWS, TILE, isDoor, type Level } from "../shared/level";
 import type { ClientMsg } from "../shared/protocol";
-import { COLORS, GROUP_RADIUS, PLAYER_HP, PLAYER_SIZE, ZOMBIE_TYPES, type Snapshot, type ZombieType } from "../shared/sim";
+import { COLORS, GROUP_RADIUS, PLAYER_HP, PLAYER_SIZE, SWING_TIME, ZOMBIE_TYPES, type Snapshot, type ZombieType } from "../shared/sim";
 
 export const WIDTH = COLS * TILE; // 320
 export const HEIGHT = ROWS * TILE; // 176
@@ -59,6 +59,7 @@ export class Game {
       this.lastInput = key;
       this.send({ t: "input", dx, dy });
     }
+    if (this.input.attack()) this.send({ t: "attack" });
 
     // Ease rendered positions toward the server's 30 Hz snapshots.
     const ease = (key: string, p: Pos) => {
@@ -114,8 +115,21 @@ export class Game {
         continue;
       }
       if (p.id === you) r.rect(v.x - 1, v.y - 1, PLAYER_SIZE + 2, PLAYER_SIZE + 2, "#fff");
-      // Alone = red outline: this player is vulnerable.
+      // Alone = red outline: vulnerable, but the only ones who can kill.
       else if (!p.grouped) r.rect(v.x - 1, v.y - 1, PLAYER_SIZE + 2, PLAYER_SIZE + 2, PALETTE.blood);
+      // Swing flash: an expanding ring. White = it can hurt zombies (alone),
+      // grey = harmless because the player is grouped (safe).
+      if (p.swing > 0) {
+        const reach = 8 + (1 - p.swing / SWING_TIME) * 8;
+        const cx = Math.round(v.x + PLAYER_SIZE / 2 - reach);
+        const cy = Math.round(v.y + PLAYER_SIZE / 2 - reach);
+        const size = Math.round(reach * 2);
+        const color = p.grouped ? "#566c86" : "#fff";
+        r.rect(cx, cy, size, 1, color);
+        r.rect(cx, cy + size, size, 1, color);
+        r.rect(cx, cy, 1, size, color);
+        r.rect(cx + size, cy, 1, size, color);
+      }
       r.rect(v.x, v.y, PLAYER_SIZE, PLAYER_SIZE, COLORS[p.slot] ?? "#fff");
       // The player's initial, centred inside their box.
       r.char(p.name.charAt(0) || "?", v.x + (PLAYER_SIZE - GLYPH_W) / 2, v.y + (PLAYER_SIZE - GLYPH_H) / 2, PALETTE.floor);

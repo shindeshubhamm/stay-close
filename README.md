@@ -7,8 +7,9 @@ A browser-based, pixel-art, co-op zombie escape game for up to **5 players**, ea
 ## How to play
 
 - **Move:** `WASD` or arrow keys on desktop. On a phone, touch anywhere and drag to get a joystick.
-- **Safety in numbers:** a player with an ally nearby is *grouped*. Grouped players can't be bitten and hit zombies hard. A lone player takes damage and barely hurts zombies. A white line links grouped players, and a red outline marks someone vulnerable.
-- **Combat is automatic:** zombies close to you take damage, so the game is about positioning.
+- **Attack:** `Space` on desktop, the **ATTACK** button on touch. Short cooldown.
+- **Safety in numbers:** a player with an ally nearby is *grouped*. Grouped players can't be bitten — but their swings are **harmless**. A white line links grouped players.
+- **To kill, step away:** only a *lone* player's swing damages zombies (a walker takes two swings). A red outline marks someone alone: vulnerable, but deadly. Your swing reaches a little further than a zombie's bite, so timing matters. Step out, strike, get back!
 - **Zombies try to split you up:**
   - **Walkers** (green) hunt isolated players and spread out to pressure everyone.
   - **Runners** (yellow, fast) go for stragglers and cut them off from the group.

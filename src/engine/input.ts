@@ -6,9 +6,16 @@ export class Input {
   private touchId: number | null = null;
   private origin = { x: 0, y: 0 };
   private stick = { x: 0, y: 0 };
+  private touchAttack = false;
 
   constructor() {
     this.initTouch();
+    const btn = document.getElementById("attack");
+    btn?.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      this.touchAttack = true;
+    }, { passive: false });
+    btn?.addEventListener("click", () => { this.touchAttack = true; });
     window.addEventListener("keydown", (e) => {
       if (e.target instanceof HTMLInputElement) return; // typing in the lobby
       if (!this.down.has(e.code)) this.pressed.add(e.code);
@@ -33,7 +40,7 @@ export class Input {
     const base = document.getElementById("stick");
     const knob = document.getElementById("knob");
     const RADIUS = 48; // px of drag for full speed
-    const inMenu = (e: Event) => e.target instanceof Element && e.target.closest("#overlay");
+    const inMenu = (e: Event) => e.target instanceof Element && e.target.closest("#overlay, #attack");
 
     const place = (el: HTMLElement | null, x: number, y: number) => {
       if (el) el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
@@ -74,6 +81,13 @@ export class Input {
     };
     window.addEventListener("touchend", finish);
     window.addEventListener("touchcancel", finish);
+  }
+
+  /** One-shot attack: Space on desktop, the ATTACK button on touch. */
+  attack(): boolean {
+    const a = this.pressed.has("Space") || this.touchAttack;
+    this.touchAttack = false;
+    return a;
   }
 
   isDown(code: string): boolean {
